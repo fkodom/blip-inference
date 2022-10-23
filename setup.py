@@ -34,7 +34,11 @@ setup(
     description="project_description",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    install_requires=[],
+    install_requires=[
+        "timm",
+        "transformers>=4.15.0",
+        "torch>=1.10",
+    ],
     extras_require=extras_require,
     classifiers=[
         "Programming Language :: Python :: 3",
