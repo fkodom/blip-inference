@@ -1,5 +1,5 @@
 [run]
-source = {{REPO_NAME}}
+source = BLIP
 
 [report]
 exclude_lines =
