@@ -10,6 +10,7 @@ import warnings
 from typing import Dict, Union
 
 import torch
+import torch.nn.functional as F
 from timm.models.hub import download_cached_file
 from torch import Tensor, nn
 from transformers import BertTokenizer
@@ -21,7 +22,6 @@ warnings.filterwarnings("ignore")
 
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-PRETRAINED_WEIGHTS_URL = "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base.pth"
 BERT_CONFIG = {
     "architectures": ["BertModel"],
     "attention_probs_dropout_prob": 0.1,
@@ -43,15 +43,17 @@ BERT_CONFIG = {
 }
 
 
-class BLIP(nn.Module):
+class BLIPFeatureExtractor(nn.Module):
     def __init__(self, image_size: int = 224, vit: str = "base"):
         """
         Args:
-            med_config (str): path for the mixture of encoder-decoder model's configuration file
             image_size (int): input image size
             vit (str): model size of vision transformer
         """
         super().__init__()
+        self.image_size = image_size
+        self.vit = vit
+
         visual, vision_width = create_vit(vit, image_size)
         self.visual = visual
         self.tokenizer = init_tokenizer()
@@ -59,53 +61,26 @@ class BLIP(nn.Module):
         config.encoder_width = vision_width
         self.text_encoder = BertModel(config=config, add_pooling_layer=False)
 
-    def forward(self, image, caption, mode):
-        assert mode in [
-            "image",
-            "text",
-            "multimodal",
-        ], "mode parameter must be image, text, or multimodal"
-        text = self.tokenizer(caption, return_tensors="pt").to(image.device)
+    def encode_image(self, image: Tensor) -> Tensor:
+        return self.visual(image)
 
-        # TODO: Split these out into separate 'encode_image', 'encode_text' methods
-        if mode == "image":
-            # return image features
-            image_embeds = self.visual(image)
-            return image_embeds
+    def encode_text(self, text: Tensor) -> Tensor:
+        return self.text_encoder(
+            text.input_ids,
+            attention_mask=text.attention_mask,
+            return_dict=True,
+            mode="text",
+        ).last_hidden_state
 
-        elif mode == "text":
-            # return text features
-            text_output = self.text_encoder(
-                text.input_ids,
-                attention_mask=text.attention_mask,
-                return_dict=True,
-                mode="text",
-            )
-            return text_output.last_hidden_state
-
-        elif mode == "multimodal":
-            # return multimodel features
-            image_embeds = self.visual(image)
-            image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
-                image.device
-            )
-
-            text.input_ids[:, 0] = self.tokenizer.enc_token_id
-            output = self.text_encoder(
-                text.input_ids,
-                attention_mask=text.attention_mask,
-                encoder_hidden_states=image_embeds,
-                encoder_attention_mask=image_atts,
-                return_dict=True,
-            )
-            return output.last_hidden_state
+    def forward(self, image_encoding: Tensor, text_encoding: Tensor) -> Tensor:
+        raise NotImplementedError
 
 
-def load_blip(
-    url: str = PRETRAINED_WEIGHTS_URL,
+def load_blip_feature_extractor(
+    url: str,
     device: Union[str, torch.device] = DEVICE,
-) -> BLIP:
-    model = BLIP()
+) -> BLIPFeatureExtractor:
+    model = BLIPFeatureExtractor()
     model, msg = load_checkpoint(model, url, device=device)
     assert len(msg.missing_keys) == 0
     return model
@@ -119,7 +94,9 @@ def init_tokenizer() -> BertTokenizer:
     return tokenizer
 
 
-def load_checkpoint(model: BLIP, url: str, device: Union[str, torch.device] = DEVICE):
+def load_checkpoint(
+    model: BLIPFeatureExtractor, url: str, device: Union[str, torch.device] = DEVICE
+):
     cached_file = download_cached_file(url, check_hash=False, progress=True)
     checkpoint = torch.load(cached_file, map_location=device)
 
@@ -137,3 +114,56 @@ def load_checkpoint(model: BLIP, url: str, device: Union[str, torch.device] = DE
     msg = model.load_state_dict(state_dict, strict=False)
     print("load checkpoint from %s" % url)
     return model, msg
+
+
+class BLIP(nn.Module):
+    def __init__(
+        self,
+        image_size=384,
+        vit="base",
+        embed_dim=256,
+    ):
+        super().__init__()
+        self.image_size = image_size
+        self.vit = vit
+
+        visual, vision_width = create_vit(vit, image_size)
+        # TODO: Create wrapper (nn.Module) to get features, extract one feature token,
+        # and combine with 'self.vision_proj' below.
+        self.visual = visual
+        self.tokenizer = init_tokenizer()
+        med_config = BertConfig.from_dict(BERT_CONFIG)
+        med_config.encoder_width = vision_width
+        self.text_encoder = BertModel(config=med_config, add_pooling_layer=False)
+
+        text_width = self.text_encoder.config.hidden_size
+
+        self.vision_proj = nn.Linear(vision_width, embed_dim)
+        self.text_proj = nn.Linear(text_width, embed_dim)
+
+    def encode_image(self, image: Tensor) -> Tensor:
+        x = self.visual(image)[:, 0, :]
+        return F.normalize(self.vision_proj(x), dim=-1)
+
+    def encode_text(self, text: Tensor) -> Tensor:
+        x = self.text_encoder(
+            text.input_ids,
+            attention_mask=text.attention_mask,
+            return_dict=True,
+            mode="text",
+        )[:, 0, :]
+        return F.normalize(self.text_proj(x), dim=-1)
+
+    def forward(self, image: Tensor, text: Tensor) -> Tensor:
+        return image @ text.T
+
+
+def load_blip(
+    url: str,
+    device: Union[str, torch.device] = DEVICE,
+    vit: str = "base",
+):
+    model = BLIP(vit=vit)
+    model, msg = load_checkpoint(model, url, device=device)
+    assert len(msg.missing_keys) == 0
+    return model

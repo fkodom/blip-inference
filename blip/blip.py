@@ -2,9 +2,10 @@ from typing import List, Union
 
 import torch
 from PIL import Image
+from torch import Tensor
 from torchvision.transforms import Compose, Normalize, Resize, ToTensor
 
-from blip.model import BLIP, load_blip
+from blip.model import BLIPFeatureExtractor, load_blip, load_blip_feature_extractor
 
 try:
     from torchvision.transforms import InterpolationMode
@@ -15,7 +16,9 @@ except ImportError:
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 MODELS = {
-    "base": "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base.pth",
+    "base": "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_retrieval_coco.pth",
+    "large": "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_large_retrieval_coco.pth",
+    "feature_extractor": "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base.pth",
 }
 
 
@@ -23,7 +26,7 @@ def _convert_image_to_rgb(image: Image.Image) -> Image.Image:
     return image.convert("RGB")
 
 
-def _transform(image_size: int = 224) -> Compose:
+def _transform(image_size: int) -> Compose:
     return Compose(
         [
             Resize((image_size, image_size), interpolation=InterpolationMode.BICUBIC),
@@ -42,7 +45,14 @@ def available_models() -> List[str]:
     return list(MODELS.keys())
 
 
-def load(name: str = "base", device: Union[str, torch.device] = DEVICE) -> BLIP:
+def tokenize(text: str) -> Tensor:
+    # TODO
+    pass
+
+
+def load(
+    name: str = "base", device: Union[str, torch.device] = DEVICE
+) -> BLIPFeatureExtractor:
     """Load a BLIP model
 
     Parameters
@@ -61,5 +71,11 @@ def load(name: str = "base", device: Union[str, torch.device] = DEVICE) -> BLIP:
         A torchvision transform that converts a PIL image into a tensor that the
         returned model can take as its input
     """
-    model = load_blip(url=MODELS[name], device=device)
-    return model, _transform()
+    # TODO: Add switching logic for 'itm' and 'pretrain' models.
+    if name == "base":
+        model = load_blip(url=MODELS[name], device=device)
+    elif name == "large":
+        model = load_blip(url=MODELS[name], device=device, vit="large")
+    elif name == "feature_extractor":
+        model = load_blip_feature_extractor(url=MODELS[name], device=device)
+    return model, _transform(model.image_size)
