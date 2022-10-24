@@ -1,4 +1,4 @@
-# blip_inference
+# blip-inference
 
 Pretrained [BLIP](https://github.com/salesforce/BLIP) with a similar API to [CLIP](https://github.com/openai/CLIP).
 
@@ -18,14 +18,14 @@ User-facing methods behave similarly to CLIP.  A few underlying details change, 
 
 ```python
 import torch
-import blip_inference
+import blip_inference as blip
 from PIL import Image
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model, preprocess = blip_inference.load("feature_extractor", device=device)
+model, preprocess = blip.load("feature_extractor", device=device)
 
 raw_text = ["a diagram", "a dog", "a cat"]
-text = blip_inference.tokenize(raw_text).to(device)
+text = blip.tokenize(raw_text).to(device)
 image = preprocess(Image.open("kitten.jpeg")).unsqueeze(0).to(device)
 
 with torch.no_grad():    
@@ -41,15 +41,15 @@ probs = logits_per_image.softmax(dim=-1).cpu().numpy()
 ### Zero-Shot Prediction
 
 ```python
-import blip_inference
+import blip_inference as blip
 import torch
 from PIL import Image
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model, preprocess = blip_inference.load('base', device)
+model, preprocess = blip.load('base', device)
 
 raw_text = ["a diagram", "a dog", "a cat"]
-text = blip_inference.tokenize(raw_text).to(device)
+text = blip.tokenize(raw_text).to(device)
 image = preprocess(Image.open("kitten.jpeg")).unsqueeze(0).to(device)
 
 with torch.no_grad():
@@ -67,7 +67,9 @@ for idx, value in enumerate(similarity.squeeze()):
 
 ### Linear Probe Evaluation
 
-See [this example from the CLIP repo](https://github.com/openai/CLIP#linear-probe-evaluation).  Everything should be identicaly, except for swapping (`clip` --> `blip_inference`).
+See [this example from the CLIP repo](https://github.com/openai/CLIP#linear-probe-evaluation).  Everything should be identical, except for swapping:
+* `import clip` --> `import blip_inference as blip`
+* `clip` --> `blip`
 
 
 ## API
