@@ -1,7 +1,10 @@
 [run]
-source = BLIP
+source = blip
 
 [report]
+omit =
+    blip/compat.py
+    blip/vit.py
 exclude_lines =
     # Have to re-enable the standard pragma
     pragma: no cover
