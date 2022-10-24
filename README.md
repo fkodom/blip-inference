@@ -7,6 +7,12 @@ BLIP tends to achieve slightly better accuracy than CLIP with similar inference 
 
 ## Install
 
+From PyPI:
+```bash
+pip install blip-inference
+```
+
+From source:
 ```bash
 pip install "blip_inference @ git+https://git@github.com/fkodom/blip-inference.git"
 ```
