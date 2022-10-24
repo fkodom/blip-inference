@@ -2,7 +2,7 @@
 
 Pretrained [BLIP](https://github.com/salesforce/BLIP) with a similar API to [CLIP](https://github.com/openai/CLIP).
 
-BLIP tends to achieve slightly better accuracy than CLIP with similar inference speed.  The CLIP API is much cleaner and more commonly used.  This repo refactors BLIP to match the CLIP inference API interface, so that it's easier for practitioners to switch between CLIP / BLIP models.
+BLIP tends to achieve slightly better accuracy than CLIP with similar inference speed.  The CLIP API is much cleaner and more commonly used.  This repo refactors BLIP to match the CLIP interface, so that it's easier for practitioners to switch between CLIP / BLIP models.
 
 
 ## Install
