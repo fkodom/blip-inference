@@ -1,4 +1,4 @@
-# BLIP
+# blip_inference
 
 Pretrained [BLIP](https://github.com/salesforce/BLIP) with a similar API to [CLIP](https://github.com/openai/CLIP).
 
@@ -8,7 +8,7 @@ BLIP tends to achieve slightly better accuracy than CLIP with similar inference 
 ## Install
 
 ```bash
-pip install "blip @ git+https://git@github.com/fkodom/BLIP.git"
+pip install "blip_inference @ git+https://git@github.com/fkodom/blip-inference.git"
 ```
 
 
@@ -18,14 +18,14 @@ User-facing methods behave similarly to CLIP.  A few underlying details change, 
 
 ```python
 import torch
-import blip
+import blip_inference
 from PIL import Image
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model, preprocess = blip.load("feature_extractor", device=device)
+model, preprocess = blip_inference.load("feature_extractor", device=device)
 
 raw_text = ["a diagram", "a dog", "a cat"]
-text = blip.tokenize(raw_text).to(device)
+text = blip_inference.tokenize(raw_text).to(device)
 image = preprocess(Image.open("kitten.jpeg")).unsqueeze(0).to(device)
 
 with torch.no_grad():    
@@ -41,15 +41,15 @@ probs = logits_per_image.softmax(dim=-1).cpu().numpy()
 ### Zero-Shot Prediction
 
 ```python
-import blip
+import blip_inference
 import torch
 from PIL import Image
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model, preprocess = blip.load('base', device)
+model, preprocess = blip_inference.load('base', device)
 
 raw_text = ["a diagram", "a dog", "a cat"]
-text = blip.tokenize(raw_text).to(device)
+text = blip_inference.tokenize(raw_text).to(device)
 image = preprocess(Image.open("kitten.jpeg")).unsqueeze(0).to(device)
 
 with torch.no_grad():
@@ -67,30 +67,30 @@ for idx, value in enumerate(similarity.squeeze()):
 
 ### Linear Probe Evaluation
 
-See [this example from the CLIP repo](https://github.com/openai/CLIP#linear-probe-evaluation).  Everything should be identicaly, except for swapping (`clip` --> `blip`).
+See [this example from the CLIP repo](https://github.com/openai/CLIP#linear-probe-evaluation).  Everything should be identicaly, except for swapping (`clip` --> `blip_inference`).
 
 
 ## API
 
-Similar to CLIP, the `blip` module provides the following methods:
+Similar to CLIP, the `blip_inference` module provides the following methods:
 
-#### `blip.available_models() -> List[str]`
+#### `blip_inference.available_models() -> List[str]`
 
 Returns the names of the available BLIP models.
 
-#### `blip.load(name: str, device=...) -> Tuple[BLIP, Callable]`
+#### `blip_inference.load(name: str, device=...) -> Tuple[BLIP, Callable]`
 
-Returns the model and the TorchVision transform needed by the model, specified by the model name returned by `blip.available_models()`. It will download the model as necessary. The `name` argument can also be a path to a local checkpoint.
+Returns the model and the TorchVision transform needed by the model, specified by the model name returned by `blip_inference.available_models()`. It will download the model as necessary. The `name` argument can also be a path to a local checkpoint.
 
 The device to run the model can be optionally specified, and the default is to use the first CUDA device if there is any, otherwise the CPU.
 
-#### `blip.tokenize(text: Union[str, List[str]], context_length: int = 35) -> BatchEncoding`
+#### `blip_inference.tokenize(text: Union[str, List[str]], context_length: int = 35) -> BatchEncoding`
 
 Returns a dictionary with tokenized sequences of given text input(s). This can be used as the input to the model
 
 ---
 
-The model returned by `blip.load()` supports the following methods:
+The model returned by `blip_inference.load()` supports the following methods:
 
 #### `model.encode_image(image: Tensor) -> Tensor`
 

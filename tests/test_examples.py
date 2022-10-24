@@ -2,17 +2,17 @@ import pytest
 import torch
 from PIL import Image
 
-import blip
+import blip_inference
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 @pytest.mark.parametrize("name", ["base", "large"])
 def test_usage(name: str):
-    model, preprocess = blip.load(name, device=device)
+    model, preprocess = blip_inference.load(name, device=device)
 
     raw_text = ["a diagram", "a dog", "a cat"]
-    text = blip.tokenize(raw_text).to(device)
+    text = blip_inference.tokenize(raw_text).to(device)
     image = preprocess(Image.open("kitten.jpeg")).unsqueeze(0).to(device)
 
     with torch.no_grad():
@@ -22,10 +22,10 @@ def test_usage(name: str):
 
 @pytest.mark.parametrize("name", ["base", "large"])
 def test_zero_shot(name: str):
-    model, preprocess = blip.load(name, device)
+    model, preprocess = blip_inference.load(name, device)
 
     raw_text = ["a diagram", "a dog", "a cat"]
-    text = blip.tokenize(raw_text).to(device)
+    text = blip_inference.tokenize(raw_text).to(device)
     image = preprocess(Image.open("kitten.jpeg")).unsqueeze(0).to(device)
 
     with torch.no_grad():
@@ -40,10 +40,10 @@ def test_zero_shot(name: str):
 
 
 def test_feature_extractor():
-    model, preprocess = blip.load("feature_extractor", device)
+    model, preprocess = blip_inference.load("feature_extractor", device)
 
     raw_text = ["a diagram", "a dog", "a cat"]
-    text = blip.tokenize(raw_text).to(device)
+    text = blip_inference.tokenize(raw_text).to(device)
     image = preprocess(Image.open("kitten.jpeg")).unsqueeze(0).to(device)
 
     with torch.no_grad():
@@ -55,6 +55,6 @@ def test_feature_extractor():
 
 
 def test_available_models():
-    available = blip.available_models()
+    available = blip_inference.available_models()
     assert isinstance(available, list)
     assert len(available) > 0

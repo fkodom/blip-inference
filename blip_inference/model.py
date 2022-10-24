@@ -15,8 +15,8 @@ from timm.models.hub import download_cached_file
 from torch import Tensor, nn
 from transformers import BatchEncoding, BertTokenizer
 
-from blip.compat import BertConfig, BertModel
-from blip.vit import create_vit, interpolate_pos_embed
+from blip_inference.compat import BertConfig, BertModel
+from blip_inference.vit import create_vit, interpolate_pos_embed
 
 warnings.filterwarnings("ignore")
 

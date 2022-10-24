@@ -7,7 +7,7 @@ import setuptools
 
 def get_version_tag() -> str:
     try:
-        env_key = "BLIP_VERSION".upper()
+        env_key = "BLIP_INFERENCE_VERSION".upper()
         version = os.environ[env_key]
     except KeyError:
         version = getoutput("git describe --tags --abbrev=0")
@@ -25,11 +25,11 @@ extras_require["all"] = all_require
 
 
 setup(
-    name="BLIP",
+    name="blip-inference",
     version=get_version_tag(),
     author="Frank Odom",
     author_email="frank.odom.iii@gmail.com",
-    url="https://github.com/fkodom/BLIP",
+    url="https://github.com/fkodom/blip-inference",
     packages=setuptools.find_packages(exclude=["tests"]),
     description="project_description",
     long_description=open("README.md").read(),

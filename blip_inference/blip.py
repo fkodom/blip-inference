@@ -6,7 +6,7 @@ from torch import Tensor
 from torchvision.transforms import Compose, Normalize, Resize, ToTensor
 from transformers import BatchEncoding
 
-from blip.model import (
+from blip_inference.model import (
     BLIP,
     BLIPFeatureExtractor,
     init_tokenizer,
