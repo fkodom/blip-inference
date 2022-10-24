@@ -74,17 +74,17 @@ See [this example from the CLIP repo](https://github.com/openai/CLIP#linear-prob
 
 Similar to CLIP, the `blip` module provides the following methods:
 
-#### `blip.available_models()`
+#### `blip.available_models() -> List[str]`
 
 Returns the names of the available BLIP models.
 
-#### `blip.load(name, device=...)`
+#### `blip.load(name: str, device=...) -> Tuple[BLIP, Callable]`
 
 Returns the model and the TorchVision transform needed by the model, specified by the model name returned by `blip.available_models()`. It will download the model as necessary. The `name` argument can also be a path to a local checkpoint.
 
 The device to run the model can be optionally specified, and the default is to use the first CUDA device if there is any, otherwise the CPU.
 
-#### `blip.tokenize(text: Union[str, List[str]], context_length=35)`
+#### `blip.tokenize(text: Union[str, List[str]], context_length: int = 35) -> BatchEncoding`
 
 Returns a dictionary with tokenized sequences of given text input(s). This can be used as the input to the model
 
@@ -92,15 +92,15 @@ Returns a dictionary with tokenized sequences of given text input(s). This can b
 
 The model returned by `blip.load()` supports the following methods:
 
-#### `model.encode_image(image)`
+#### `model.encode_image(image: Tensor) -> Tensor`
 
 Given a batch of images, returns the image features encoded by the vision portion of the BLIP model.
 
-#### `model.encode_text(text)`
+#### `model.encode_text(text: BatchEncoding) -> Tensor`
 
 Given a batch of text tokens, returns the text features encoded by the language portion of the BLIP model.
 
-#### `model(image, text)`
+#### `model(image: Tensor, text: BatchEncoding) -> Tuple[Tensor, Tensor]`
 
 Given a batch of images and a batch of text tokens, returns two Tensors, containing the logit scores corresponding to each image and text input. The values are cosine similarities between the corresponding image and text features.
 
