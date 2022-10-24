@@ -7,6 +7,7 @@ import blip
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
+@pytest.fixture(params=["base", "large"])
 @pytest.mark.parametrize("name", ["base", "large"])
 def test_usage(name: str):
     model, preprocess = blip.load(name, device=device)
@@ -16,7 +17,7 @@ def test_usage(name: str):
     image = preprocess(Image.open("kitten.jpeg")).unsqueeze(0).to(device)
 
     with torch.no_grad():
-        logits_per_image, logits_per_text = model(image, text)
+        logits_per_image, _ = model(image, text)
     probs = torch.softmax(logits_per_image, dim=-1)
 
     print("\nPredictions:\n")

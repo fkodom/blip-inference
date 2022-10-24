@@ -1,11 +1,13 @@
-from typing import List, Sequence, Union
+from typing import Callable, List, Sequence, Tuple, Union
 
 import torch
 from PIL import Image
 from torch import Tensor
 from torchvision.transforms import Compose, Normalize, Resize, ToTensor
+from transformers import BatchEncoding
 
 from blip.model import (
+    BLIP,
     BLIPFeatureExtractor,
     init_tokenizer,
     load_blip,
@@ -54,7 +56,7 @@ def available_models() -> List[str]:
 
 def tokenize(
     text: Union[str, Sequence[str]], context_length: int = CONTEXT_LENGTH
-) -> Tensor:
+) -> BatchEncoding:
     if isinstance(text, str):
         text = [text]
     return TOKENIZER.batch_encode_plus(
@@ -68,7 +70,7 @@ def tokenize(
 
 def load(
     name: str = "base", device: Union[str, torch.device] = DEVICE
-) -> BLIPFeatureExtractor:
+) -> Tuple[Union[BLIP, BLIPFeatureExtractor], Callable[[Image.Image], Tensor]]:
     """Load a BLIP model
 
     Parameters

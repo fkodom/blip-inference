@@ -13,7 +13,7 @@ import torch
 import torch.nn.functional as F
 from timm.models.hub import download_cached_file
 from torch import Tensor, nn
-from transformers import BertTokenizer
+from transformers import BatchEncoding, BertTokenizer
 
 from blip.compat import BertConfig, BertModel
 from blip.vit import create_vit, interpolate_pos_embed
@@ -64,7 +64,7 @@ class BLIPFeatureExtractor(nn.Module):
     def encode_image(self, image: Tensor) -> Tensor:
         return self.visual(image)
 
-    def encode_text(self, text: Tensor) -> Tensor:
+    def encode_text(self, text: BatchEncoding) -> Tensor:
         return self.text_encoder(
             text.input_ids,
             attention_mask=text.attention_mask,
@@ -72,7 +72,7 @@ class BLIPFeatureExtractor(nn.Module):
             mode="text",
         ).last_hidden_state
 
-    def forward(self, image_encoding: Tensor, text_encoding: Tensor) -> Tensor:
+    def forward(self, image_encoding: Tensor, text_encoding: BatchEncoding) -> Tensor:
         raise NotImplementedError
 
 
@@ -83,7 +83,7 @@ def load_blip_feature_extractor(
     model = BLIPFeatureExtractor()
     model, msg = load_checkpoint(model, url, device=device)
     assert len(msg.missing_keys) == 0
-    return model
+    return model.eval().to(device)
 
 
 def init_tokenizer() -> BertTokenizer:
@@ -95,7 +95,7 @@ def init_tokenizer() -> BertTokenizer:
 
 
 def load_checkpoint(
-    model: BLIPFeatureExtractor, url: str, device: Union[str, torch.device] = DEVICE
+    model: nn.Module, url: str, device: Union[str, torch.device] = DEVICE
 ):
     cached_file = download_cached_file(url, check_hash=False, progress=True)
     checkpoint = torch.load(cached_file, map_location=device)
@@ -145,7 +145,7 @@ class BLIP(nn.Module):
         x = self.visual(image)[:, 0, :]
         return F.normalize(self.vision_proj(x), dim=-1)
 
-    def encode_text(self, text: Tensor) -> Tensor:
+    def encode_text(self, text: BatchEncoding) -> Tensor:
         x = self.text_encoder(
             text.input_ids,
             attention_mask=text.attention_mask,
@@ -154,7 +154,7 @@ class BLIP(nn.Module):
         ).last_hidden_state[:, 0, :]
         return F.normalize(self.text_proj(x), dim=-1)
 
-    def forward(self, image: Tensor, text: Tensor) -> Tuple[Tensor, Tensor]:
+    def forward(self, image: Tensor, text: BatchEncoding) -> Tuple[Tensor, Tensor]:
         image_features = self.encode_image(image)
         text_features = self.encode_text(text)
         logits_per_image = 100.0 * image_features @ text_features.T
@@ -170,4 +170,4 @@ def load_blip(
     model = BLIP(vit=vit)
     model, msg = load_checkpoint(model, url, device=device)
     assert len(msg.missing_keys) == 0
-    return model.to(device)
+    return model.eval().to(device)

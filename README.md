@@ -22,7 +22,7 @@ import blip
 from PIL import Image
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-model, preprocess = blip.load("base", device=device)
+model, preprocess = blip.load("feature_extractor", device=device)
 
 raw_text = ["a diagram", "a dog", "a cat"]
 text = blip.tokenize(raw_text).to(device)
