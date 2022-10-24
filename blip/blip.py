@@ -1,11 +1,16 @@
-from typing import List, Union
+from typing import List, Sequence, Union
 
 import torch
 from PIL import Image
 from torch import Tensor
 from torchvision.transforms import Compose, Normalize, Resize, ToTensor
 
-from blip.model import BLIPFeatureExtractor, load_blip, load_blip_feature_extractor
+from blip.model import (
+    BLIPFeatureExtractor,
+    init_tokenizer,
+    load_blip,
+    load_blip_feature_extractor,
+)
 
 try:
     from torchvision.transforms import InterpolationMode
@@ -15,6 +20,8 @@ except ImportError:
     BICUBIC = Image.BICUBIC
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+TOKENIZER = init_tokenizer()
+CONTEXT_LENGTH = 35
 MODELS = {
     "base": "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_retrieval_coco.pth",
     "large": "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_large_retrieval_coco.pth",
@@ -45,9 +52,18 @@ def available_models() -> List[str]:
     return list(MODELS.keys())
 
 
-def tokenize(text: str) -> Tensor:
-    # TODO
-    pass
+def tokenize(
+    text: Union[str, Sequence[str]], context_length: int = CONTEXT_LENGTH
+) -> Tensor:
+    if isinstance(text, str):
+        text = [text]
+    return TOKENIZER.batch_encode_plus(
+        text,
+        padding="max_length",
+        truncation=True,
+        max_length=context_length,
+        return_tensors="pt",
+    )
 
 
 def load(

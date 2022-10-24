@@ -7,7 +7,7 @@
 """
 
 import warnings
-from typing import Dict, Union
+from typing import Dict, Tuple, Union
 
 import torch
 import torch.nn.functional as F
@@ -119,9 +119,9 @@ def load_checkpoint(
 class BLIP(nn.Module):
     def __init__(
         self,
-        image_size=384,
-        vit="base",
-        embed_dim=256,
+        image_size: int = 384,
+        vit: str = "base",
+        embed_dim: int = 256,
     ):
         super().__init__()
         self.image_size = image_size
@@ -151,11 +151,15 @@ class BLIP(nn.Module):
             attention_mask=text.attention_mask,
             return_dict=True,
             mode="text",
-        )[:, 0, :]
+        ).last_hidden_state[:, 0, :]
         return F.normalize(self.text_proj(x), dim=-1)
 
-    def forward(self, image: Tensor, text: Tensor) -> Tensor:
-        return image @ text.T
+    def forward(self, image: Tensor, text: Tensor) -> Tuple[Tensor, Tensor]:
+        image_features = self.encode_image(image)
+        text_features = self.encode_text(text)
+        logits_per_image = 100.0 * image_features @ text_features.T
+        logits_per_text = logits_per_image.T
+        return logits_per_image, logits_per_text
 
 
 def load_blip(
@@ -166,4 +170,4 @@ def load_blip(
     model = BLIP(vit=vit)
     model, msg = load_checkpoint(model, url, device=device)
     assert len(msg.missing_keys) == 0
-    return model
+    return model.to(device)

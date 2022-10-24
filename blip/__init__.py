@@ -1,1 +1,1 @@
-from blip.blip import available_models, load  # noqa: F401
+from blip.blip import available_models, load, tokenize  # noqa: F401
