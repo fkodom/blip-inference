@@ -27,7 +27,7 @@ jobs:
 
       - name: Build Package
         env:
-          BLIP_VERSION: ${{ github.event.release.tag_name }}
+          BLIP_INFERENCE_VERSION: ${{ github.event.release.tag_name }}
         run: python -m build
 
       - name: Publish to PyPI
